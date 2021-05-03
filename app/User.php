@@ -787,18 +787,19 @@ class User extends Authenticatable
 
         $file_name = md5(Hash::make($this->id)).'.jpg';
         $dest_path = Storage::path(self::PHOTO_DIRECTORY.DIRECTORY_SEPARATOR.$file_name);
-
-        $dest_dir = pathinfo($dest_path, PATHINFO_DIRNAME);
-        if (!file_exists($dest_dir)) {
-            \File::makeDirectory($dest_dir, 0755);
-        }
-
+        $temp_file_name = tempnam(sys_get_temp_dir(), 'punchzee');
+        $temp_image_name = $temp_file_name . '.jpg';
+        
+        rename($temp_file_name, $temp_image_name);
+        
         // Remove current photo
         if ($this->photo_url) {
             Storage::delete(self::PHOTO_DIRECTORY.DIRECTORY_SEPARATOR.$this->photo_url);
         }
 
-        imagejpeg($resized_image, $dest_path, self::PHOTO_QUALITY);
+        imagejpeg($resized_image, $temp_image_name, self::PHOTO_QUALITY);
+        
+        Storage::put(self::PHOTO_DIRECTORY.DIRECTORY_SEPARATOR.$file_name, file_get_contents($temp_image_name));
         // $photo_url = $request->file('photo_url')->storeAs(
         //     User::PHOTO_DIRECTORY, !Hash::make($user->id).'.jpg'
         // );
